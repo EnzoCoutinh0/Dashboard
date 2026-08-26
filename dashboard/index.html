@@ -1,0 +1,136 @@
+<!-- Declaração do tipo de documento, informando ao navegador que é um arquivo da web moderno (HTML5) -->
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <!-- Define a codificação de caracteres para suportar acentuação e caracteres especiais, como "ç" e "ã" -->
+    <meta charset="UTF-8">
+    <!-- Torna a página responsiva, ajustando o layout e o zoom para caber em telas de celulares ou monitores -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- O título que aparecerá na aba do navegador -->
+    <title>Dashboard Financeiro</title>
+
+    <!-- Importa a biblioteca D3.js externa, que é uma ferramenta poderosa para desenhar os gráficos (SVG) dinamicamente -->
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+
+    <!-- Conecta o arquivo de estilos (CSS) externo para dar cor, formato e posição aos elementos da página -->
+    <link rel="stylesheet" href="style.css">
+
+</head>
+
+<body>
+
+<!-- Container principal que agrupa toda a tela. Útil para aplicar um formato lado-a-lado (sidebar e conteúdo) no CSS -->
+<div class="container">
+
+    <!-- SIDEBAR: A barra lateral esquerda de navegação e controles -->
+    <aside>
+
+        <!-- Área do logotipo e título do projeto -->
+        <div class="logo">
+            <div class="logoIcon">₿</div>
+            <div>
+                <h2>Crypto</h2>
+                <p>Dashboard</p>
+            </div>
+        </div>
+
+        <h3>Moedas</h3>
+
+        <!-- Caixa de seleção múltipla onde o usuário escolhe quais moedas quer monitorar -->
+        <select id="moedas" multiple>
+            <!-- Opções disponíveis. O atributo "selected" indica que essas opções já vêm marcadas por padrão -->
+            <option value="BRL" selected>Real (BRL)</option>
+            <option value="USD" selected>Dólar (USD)</option>
+            <option value="EUR" selected>Euro (EUR)</option>
+            <option value="GBP">Libra (GBP)</option>
+            <option value="JPY">Iene (JPY)</option>
+            <option value="BTC" selected>Bitcoin (BTC)</option>
+            <option value="ARS">Peso Argentino (ARS)</option>
+        </select>
+
+        <!-- Botão que, ao ser clicado, ativa a função JavaScript "buscarCotacoes()" para atualizar a tela -->
+        <button onclick="buscarCotacoes()">
+            Atualizar Dados
+        </button>
+
+    </aside>
+
+    <!-- CONTEÚDO: Área central e direita onde os dados principais e gráficos são exibidos -->
+    <main>
+
+        <!-- Cabeçalho do conteúdo com o título principal e a identificação do usuário -->
+        <header>
+            <div>
+                <h1>Dashboard Financeiro</h1>
+                <span>Cotações em tempo real</span>
+            </div>
+            <div class="perfil">
+                👤 Usuário
+            </div>
+        </header>
+
+        <!-- CARDS DE RESUMO: Faixa superior com indicadores rápidos -->
+        <section class="cards">
+            <!-- Cartão 1: Quantidade total de moedas sendo monitoradas no momento -->
+            <div class="card">
+                <small>Total de moedas</small>
+                <h2 id="totalMoedas">0</h2>
+            </div>
+            <!-- Cartão 2: Mostra o nome da moeda que possui o maior valor de cotação atual -->
+            <div class="card">
+                <small>Maior cotação</small>
+                <h2 id="maiorMoeda">-</h2>
+            </div>
+            <!-- Cartão 3: Exibe o valor numérico dessa maior cotação -->
+            <div class="card">
+                <small>Valor</small>
+                <h2 id="maiorValor">R$0,00</h2>
+            </div>
+            <!-- Cartão 4: Informa o horário exato em que os dados foram atualizados pela última vez -->
+            <div class="card">
+                <small>Última atualização</small>
+                <h2 id="horaAtual">--:--</h2>
+            </div>
+        </section>
+
+        <!-- GRÁFICOS - LINHA SUPERIOR: Dividida em duas colunas (painéis) -->
+        <section class="grid2">
+            <!-- Painel Esquerdo (maior): Espaço em branco reservado para o Gráfico de Barras principal -->
+            <div class="painel grande">
+                <h3>Cotação Atual</h3>
+                <!-- Tag SVG (Scalable Vector Graphics) onde o código JavaScript (D3.js) irá injetar e desenhar o gráfico -->
+                <svg id="graficoBarras"></svg>
+            </div>
+            <!-- Painel Direito: Exibirá um texto detalhado ou mini-tabela resumindo a situação geral -->
+            <div class="painel">
+                <h3>Resumo</h3>
+                <div id="resumo"></div>
+            </div>
+        </section>
+
+        <!-- GRÁFICOS - LINHA INFERIOR: Dividida em duas colunas menores -->
+        <section class="grid2">
+            <!-- Painel Esquerdo: Espaço em branco para desenhar o gráfico horizontal de ranking (do maior para o menor) -->
+            <div class="painel">
+                <h3>Ranking das Moedas</h3>
+                <svg id="graficoHorizontal"></svg>
+            </div>
+            <!-- Painel Direito: Espaço onde o JavaScript vai gerar e listar cartões individuais para cada moeda escolhida -->
+            <div class="painel">
+                <h3>Moedas Selecionadas</h3>
+                <div id="cardsLista" class="cardsLista">
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+</div>
+
+<!-- Conecta o arquivo JavaScript externo (script.js) que contém toda a lógica para consultar os valores reais na internet e desenhar os dados na tela -->
+<script src="script.js"></script>
+
+</body>
+</html>

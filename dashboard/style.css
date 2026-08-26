@@ -1,0 +1,317 @@
+/* =========================================
+   CONFIGURAÇÕES GLOBAIS
+   ========================================= */
+
+* {
+    margin: 0;
+    padding: 0;
+    /* Faz com que bordas e paddings não aumentem o tamanho total definido para o elemento */
+    box-sizing: border-box; 
+}
+
+body {
+    /* Aplicar a fonte no body (em vez do *) melhora a performance por usar a herança nativa do navegador */
+    font-family: "Segoe UI", Arial, sans-serif;
+    /* Fundo com gradiente escuro elegante */
+    background: linear-gradient(135deg, #0b1220, #111827, #182233);
+    color: white;
+    /* Trava a barra de rolagem principal da página. A rolagem vai acontecer apenas dentro da tag <main> */
+    overflow: hidden; 
+}
+
+/* O container envelopa a barra lateral e o conteúdo, forçando a ocuparem 100% da altura da tela (100vh) */
+.container {
+    display: flex;
+    height: 100vh;
+}
+
+/* =========================================
+   BARRA LATERAL (SIDEBAR)
+   ========================================= */
+
+aside {
+    width: 260px;
+    background: #111827;
+    padding: 30px;
+    /* Cria uma linha sutil para separar a barra do conteúdo principal */
+    border-right: 1px solid rgba(255, 255, 255, .05);
+    display: flex;
+    flex-direction: column;
+}
+
+/* Área do topo da barra lateral (Ícone e Nome) */
+.logo {
+    display: flex;
+    align-items: center;
+    margin-bottom: 40px;
+    gap: 15px; /* Espaço entre o ícone e o texto */
+}
+
+/* Quadrado azul com o símbolo do Bitcoin */
+.logoIcon {
+    width: 50px;
+    height: 50px;
+    border-radius: 14px;
+    background: #4f7cff;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 26px;
+    font-weight: bold;
+}
+
+.logo p {
+    color: #94a3b8; /* Cinza claro */
+    margin-top: 3px;
+}
+
+aside h3 {
+    margin-bottom: 15px;
+    color: #94a3b8;
+}
+
+/* Caixa de seleção múltipla (Select) */
+select {
+    width: 100%;
+    height: 220px;
+    background: #1b2435;
+    color: white;
+    border: none;
+    border-radius: 15px;
+    padding: 10px;
+    outline: none; /* Remove aquela borda azul feia padrão do navegador ao clicar */
+}
+
+option {
+    padding: 12px;
+}
+
+/* Botão de atualizar dados */
+button {
+    margin-top: 20px;
+    border: none;
+    border-radius: 15px;
+    padding: 15px;
+    background: linear-gradient(90deg, #4f7cff, #6d7dff);
+    color: white;
+    font-size: 16px;
+    cursor: pointer; /* Muda a setinha do mouse para a mãozinha indicando clique */
+    transition: .3s; /* Deixa as animações (como o hover abaixo) suaves */
+}
+
+/* Efeito ao passar o mouse por cima do botão (Hover) */
+button:hover {
+    transform: translateY(-3px); /* Faz o botão dar um pulinho para cima */
+    box-shadow: 0 15px 30px rgba(79, 124, 255, .4); /* Adiciona um brilho embaixo */
+}
+
+/* =========================================
+   CONTEÚDO PRINCIPAL (MAIN)
+   ========================================= */
+
+main {
+    flex: 1; /* Faz o <main> preencher todo o espaço restante deixado pela sidebar */
+    padding: 35px;
+    overflow: auto; /* Permite que apenas esta área role (scroll) se os gráficos forem muito grandes */
+}
+
+/* Cabeçalho do conteúdo (Título e Perfil) */
+header {
+    display: flex;
+    justify-content: space-between; /* Joga o título para a esquerda e o perfil para a direita */
+    align-items: center;
+    margin-bottom: 30px;
+}
+
+header span {
+    color: #94a3b8;
+}
+
+/* Círculo do avatar do usuário */
+.perfil {
+    width: 55px;
+    height: 55px;
+    border-radius: 50%;
+    background: #1b2435;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 22px;
+}
+
+/* =========================================
+   CARDS (Resumo Superior)
+   ========================================= */
+
+.cards {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr); /* Divide o espaço em 4 colunas iguais */
+    gap: 20px;
+    margin-bottom: 30px;
+}
+
+.card {
+    background: #182233;
+    border-radius: 20px;
+    padding: 25px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, .25);
+    transition: .3s;
+    border: 1px solid rgba(255, 255, 255, .04);
+}
+
+/* Pulinho do card ao passar o mouse */
+.card:hover {
+    transform: translateY(-6px); 
+}
+
+.card small {
+    color: #94a3b8;
+}
+
+.card h2 {
+    margin-top: 10px;
+    color: #4ade80; /* Verde neon, usado para destacar valores positivos/dinheiro */
+}
+
+/* =========================================
+   PAINÉIS (Área dos Gráficos D3)
+   ========================================= */
+
+/* Grid flexível de 2 colunas. A primeira ocupa 2 terços (2fr) e a segunda 1 terço (1fr) */
+.grid2 {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 25px;
+    margin-bottom: 25px;
+}
+
+.painel {
+    background: #182233;
+    border-radius: 20px;
+    padding: 25px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, .25);
+}
+
+.painel h3 {
+    margin-bottom: 20px;
+    color: white;
+}
+
+.grande {
+    min-height: 470px; /* Garante que o painel não esmague o SVG que tem 400px */
+}
+
+/* Espaço desenhado pela biblioteca D3.js */
+svg {
+    width: 100%;
+    height: 400px;
+}
+
+/* =========================================
+   ÁREA DE RESUMO ESCRITO
+   ========================================= */
+
+#resumo {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.info {
+    background: #1b2435;
+    padding: 15px;
+    border-radius: 12px;
+}
+
+.info span {
+    color: #4ade80;
+    font-weight: bold;
+}
+
+.vencedor {
+    margin-top: 20px;
+    padding: 18px;
+    border-radius: 15px;
+    background: #1b2435;
+    border-left: 5px solid #22c55e; /* Borda verde na lateral esquerda para destacar */
+}
+
+/* =========================================
+   LISTA DE MOEDAS INFERIOR
+   ========================================= */
+
+.cardsLista {
+    display: flex;
+    flex-direction: column; /* Otimizado: Flexbox é mais leve e cumpre o mesmo papel que o Grid de 1 coluna aqui */
+    gap: 15px;
+}
+
+.moeda {
+    background: #1b2435;
+    padding: 18px;
+    border-radius: 15px;
+    display: flex;
+    justify-content: space-between; /* Afasta o nome/ícone do valor em dinheiro */
+    align-items: center;
+    transition: .3s;
+}
+
+.moeda:hover {
+    transform: scale(1.02); /* Efeito de expansão leve (zoom) no cartão */
+}
+
+.moeda strong {
+    color: #4ade80;
+}
+
+/* =========================================
+   ESTILIZAÇÃO DA BARRA DE ROLAGEM (SCROLL)
+   ========================================= */
+
+/* Define a largura da barra */
+::-webkit-scrollbar {
+    width: 8px;
+}
+
+/* Estiliza o "polegar" (a parte que se move) */
+::-webkit-scrollbar-thumb {
+    background: #4f7cff;
+    border-radius: 20px;
+}
+
+/* =========================================
+   RESPONSIVIDADE (Telas menores e Celulares)
+   ========================================= */
+
+/* Para telas médias (Laptops e Tablets em pé) */
+@media(max-width: 1100px) {
+    .cards {
+        grid-template-columns: repeat(2, 1fr); /* Reduz os 4 cards de topo para 2x2 */
+    }
+    
+    .grid2 {
+        grid-template-columns: 1fr; /* Quebra os painéis de lado a lado para um embaixo do outro */
+    }
+}
+
+/* Para telas pequenas (Celulares) */
+@media(max-width: 800px) {
+    body {
+        overflow: auto; /* Otimização/Correção: Permite a rolagem geral da tela no celular */
+    }
+    
+    .container {
+        flex-direction: column; /* Joga a sidebar para cima e o painel para baixo */
+        height: auto; /* Correção: Libera a trava de altura para não cortar os gráficos no celular */
+    }
+    
+    aside {
+        width: 100%; /* A barra lateral agora toma a largura inteira da tela */
+        border-right: none;
+        border-bottom: 1px solid rgba(255, 255, 255, .05);
+    }
+    
+    .cards {
+        grid-template-columns: 1fr; /* Coloca os cards do topo em fila única (1 por linha) */
+    }
+}
