@@ -1,0 +1,1 @@
+document.querySelectorAll('.toggle-pass').forEach(btn=>{btn.addEventListener('click',()=>{const input=document.getElementById(btn.dataset.target);input.type=input.type==='password'?'text':'password';btn.textContent=input.type==='password'?'◉':'◌';});});
