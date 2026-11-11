@@ -8,7 +8,7 @@ Projeto PHP com MySQL para XAMPP.
 2. Inicie **Apache** e **MySQL** no XAMPP.
 3. Abra `http://localhost/phpmyadmin`.
 4. Importe `database.sql`.
-5. Abra `http://localhost/Tela-Login-Roxo/`.
+5. Abra `http://localhost/Dashboard/`.
 
 O cadastro grava automaticamente `nome`, `email`, `telefone` e senha com `password_hash()` na tabela `usuarios`.
 

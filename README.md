@@ -1,5 +1,11 @@
 # Dashboard de Moedas e Projeções
 
+**[Ver demo ao vivo](https://enzocoutinh0.github.io/Dashboard/)** · Entre como visitante ou crie uma conta de teste.
+
+![Dashboard](docs/img/dashboard.png)
+
+> A demo no GitHub Pages é uma versão estática: como o Pages não executa PHP nem MySQL, o login é simulado no navegador (os dados ficam só no `localStorage` de quem usa, e a senha é salva como hash SHA-256). A versão completa, com PHP + MySQL, está na pasta `Dashboard/`.
+
 ## Sobre o projeto
 
 Este projeto consiste em uma dashboard web para acompanhamento e comparação de moedas, com sistema de autenticação de usuários, seleção personalizada de moedas, consulta de cotações e gráficos de evolução/projeção.
@@ -137,22 +143,26 @@ O projeto pode ser executado localmente utilizando:
 ## Estrutura principal
 
 ```text
-Tela-Login-Roxo-atualizado/
+├── Dashboard/            # aplicação completa (PHP + MySQL)
+│   ├── index.php         # login
+│   ├── cadastro.php
+│   ├── registrar.php
+│   ├── autenticar.php
+│   ├── dashboard.php
+│   ├── logout.php
+│   ├── config.php
+│   ├── database.sql
+│   └── assets/
+│       ├── auth.css
+│       ├── auth.js
+│       ├── dashboard.css
+│       └── dashboard.js
 │
-├── index.php
-├── cadastro.php
-├── registrar.php
-├── autenticar.php
-├── dashboard.php
-├── logout.php
-├── config.php
-├── database.sql
-│
-└── assets/
-    ├── auth.css
-    ├── auth.js
-    ├── dashboard.css
-    └── dashboard.js
+└── docs/                 # demo estática publicada no GitHub Pages
+    ├── index.html
+    ├── cadastro.html
+    ├── dashboard.html
+    └── assets/demo.js    # login simulado no navegador
 ```
 
 ## Banco de dados
@@ -184,11 +194,11 @@ C:\xampp\htdocs\
 ```
 
 4. Crie o banco de dados utilizando o arquivo `database.sql`.
-5. Confira as configurações de conexão em `config.php`.
+5. Confira as configurações de conexão em `config.php`. Por padrão ele usa o usuário `root` sem senha do XAMPP; em outro ambiente, defina as variáveis `DB_HOST`, `DB_NAME`, `DB_USER` e `DB_PASS`.
 6. Abra no navegador:
 
 ```text
-http://localhost/Tela-Login-Roxo-atualizado/
+http://localhost/Dashboard/
 ```
 
 ## Objetivo do projeto

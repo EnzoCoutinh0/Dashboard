@@ -56,7 +56,12 @@ function escapeHtml(value) {
 }
 
 function formatCurrency(value) {
-  return `R$ ${currencyFormatter.format(Number(value) || 0)}`;
+  const n = Number(value) || 0;
+  if (n > 0 && n < 0.01) {
+    const digits = Math.min(8, Math.max(3, 1 - Math.floor(Math.log10(n)) + 1));
+    return `R$ ${n.toLocaleString('pt-BR', { minimumFractionDigits: digits, maximumFractionDigits: digits })}`;
+  }
+  return `R$ ${currencyFormatter.format(n)}`;
 }
 
 async function fetchJson(url, options = {}, timeoutMs = 10000) {
@@ -313,6 +318,10 @@ function updateCards(currencies) {
   });
 }
 
+function flagFor(code) {
+  return code === 'BTC' ? '₿' : (bandeiras[code] || '💱');
+}
+
 function updateSummary(currencies) {
   const el = $('#resumo');
   if (!currencies.length) {
@@ -320,7 +329,7 @@ function updateSummary(currencies) {
     return;
   }
   el.innerHTML = currencies.slice(0, 10).map(item => `
-    <div class="info"><strong>${escapeHtml(item.nome)}</strong><span>${formatCurrency(item.valor)}</span></div>
+    <div class="info"><strong><em>${flagFor(item.nome)}</em>${escapeHtml(item.nome)}</strong><span>${formatCurrency(item.valor)}</span></div>
   `).join('') + (currencies.length > 10
     ? `<div class="info-more">+ ${currencies.length - 10} moedas selecionadas</div>`
     : '');
@@ -334,46 +343,175 @@ function updateList(currencies) {
   }
   el.innerHTML = currencies.map(item => `
     <div class="moeda">
-      <div><h3>${bandeiras[item.nome] || '💱'} ${escapeHtml(item.nome)}</h3><small>${escapeHtml(moedaNome(item.nome))}</small></div>
+      <div><h3>${flagFor(item.nome)} ${escapeHtml(item.nome)}</h3><small>${escapeHtml(item.nome === 'BTC' ? 'Bitcoin' : moedaNome(item.nome))}</small></div>
       <strong>${formatCurrency(item.valor)}</strong>
     </div>
   `).join('');
+}
+
+/* ---------- Estilo compartilhado dos gráficos ---------- */
+const CHART = {
+  palette: ['#a78bfa', '#38bdf8', '#f472b6', '#fbbf24', '#34d399', '#fb7185'],
+  axis: '#7d7490',
+  grid: 'rgba(255,255,255,.06)',
+  label: '#ddd6fe',
+  font: 'Inter, system-ui, sans-serif'
+};
+
+const compactFormatter = new Intl.NumberFormat('pt-BR', { notation: 'compact', maximumFractionDigits: 1 });
+function formatAxis(value) {
+  if (value >= 1000) return compactFormatter.format(value);
+  if (value >= 1) return d3.format('~r')(+value.toPrecision(3)).replace('.', ',');
+  return String(+value.toPrecision(2)).replace('.', ',');
+}
+
+// Usa escala logarítmica quando os valores são muito diferentes (ex.: BTC x JPY).
+function needsLog(values) {
+  const positives = values.filter(v => v > 0);
+  if (positives.length < 2) return false;
+  return d3.max(positives) / d3.min(positives) > 50;
+}
+
+function valueScale(values, range) {
+  const max = d3.max(values) || 1;
+  if (needsLog(values)) {
+    const min = d3.min(values.filter(v => v > 0));
+    return d3.scaleLog().domain([min / 3, max * 1.6]).range(range).clamp(true);
+  }
+  return d3.scaleLinear().domain([0, max]).nice().range(range);
+}
+
+function styleAxis(g, { fontSize = 12, hideDomain = true } = {}) {
+  if (hideDomain) g.select('.domain').remove();
+  g.selectAll('.tick line').attr('stroke', CHART.grid);
+  g.selectAll('text').attr('fill', CHART.axis).style('font-size', `${fontSize}px`).style('font-family', CHART.font);
+  return g;
+}
+
+let tooltipEl = null;
+function tooltip() {
+  if (!tooltipEl) {
+    tooltipEl = document.createElement('div');
+    tooltipEl.className = 'chart-tooltip';
+    document.body.appendChild(tooltipEl);
+  }
+  return tooltipEl;
+}
+function showTooltip(event, title, value) {
+  const el = tooltip();
+  el.innerHTML = `<b>${escapeHtml(title)}</b><span>${escapeHtml(value)}</span>`;
+  const x = Math.min(event.clientX + 14, window.innerWidth - el.offsetWidth - 10);
+  el.style.left = `${x}px`;
+  el.style.top = `${event.clientY - el.offsetHeight - 12}px`;
+  el.classList.add('show');
+}
+function hideTooltip() {
+  if (tooltipEl) tooltipEl.classList.remove('show');
+}
+
+function addGradient(svg, id, color) {
+  const grad = svg.append('defs').append('linearGradient')
+    .attr('id', id).attr('x1', 0).attr('x2', 0).attr('y1', 0).attr('y2', 1);
+  grad.append('stop').attr('offset', '0%').attr('stop-color', color).attr('stop-opacity', 1);
+  grad.append('stop').attr('offset', '100%').attr('stop-color', color).attr('stop-opacity', .35);
+}
+
+function chartWidth(selector, fallback) {
+  const node = document.querySelector(selector);
+  const w = node ? node.getBoundingClientRect().width : 0;
+  return Math.max(300, Math.round(w || fallback));
+}
+
+// Afasta rótulos que ficariam um em cima do outro.
+function dodgeLabels(items, minGap, top, bottom) {
+  const sorted = [...items].sort((a, b) => a.y - b.y);
+  for (let i = 1; i < sorted.length; i++) {
+    if (sorted[i].y - sorted[i - 1].y < minGap) sorted[i].y = sorted[i - 1].y + minGap;
+  }
+  const overflow = sorted.length ? sorted.at(-1).y - bottom : 0;
+  if (overflow > 0) sorted.forEach(item => { item.y = Math.max(top, item.y - overflow); });
+  for (let i = sorted.length - 2; i >= 0; i--) {
+    if (sorted[i + 1].y - sorted[i].y < minGap) sorted[i].y = sorted[i + 1].y - minGap;
+  }
+  return items;
 }
 
 function clearSvg(selector) {
   return d3.select(selector).selectAll('*').remove();
 }
 
+function emptyChart(selector, message = 'Selecione ao menos uma moeda para ver o gráfico.') {
+  const width = chartWidth(selector, 600), height = 220;
+  const svg = d3.select(selector).attr('viewBox', `0 0 ${width} ${height}`);
+  svg.append('text').attr('x', width / 2).attr('y', height / 2).attr('text-anchor', 'middle')
+    .attr('fill', CHART.axis).style('font-size', '14px').style('font-family', CHART.font).text(message);
+}
+
 function drawBarChart(data) {
   const svg = d3.select('#graficoBarras');
   clearSvg('#graficoBarras');
-  if (!data.length) return;
+  if (!data.length) return emptyChart('#graficoBarras');
 
-  const width = 700, height = 380;
-  const margin = { top: 30, right: 30, bottom: 50, left: 75 };
-  const x = d3.scaleBand().domain(data.map(d => d.nome)).range([margin.left, width - margin.right]).padding(.35);
-  const maxValue = d3.max(data, d => d.valor) || 1;
-  const y = d3.scaleLinear().domain([0, maxValue]).nice().range([height - margin.bottom, margin.top]);
+  // Com muitas moedas os nomes se sobrepõem: mostra as 12 maiores.
+  const MAX_BARS = 12;
+  const totalBars = data.length;
+  if (data.length > MAX_BARS) data = [...data].sort((a, b) => b.valor - a.valor).slice(0, MAX_BARS);
+
+  const width = chartWidth('#graficoBarras', 720), height = 360;
+  const margin = { top: 34, right: 8, bottom: 40, left: 52 };
+  const x = d3.scaleBand().domain(data.map(d => d.nome)).range([margin.left, width - margin.right]).padding(.38);
+  const values = data.map(d => d.valor);
+  const y = valueScale(values, [height - margin.bottom, margin.top]);
+  const isLog = needsLog(values);
+  const baseline = height - margin.bottom;
 
   svg.attr('viewBox', `0 0 ${width} ${height}`);
-  svg.append('g').attr('transform', `translate(0,${height - margin.bottom})`)
-    .call(d3.axisBottom(x)).selectAll('text').attr('fill', '#fff').style('font-size', '12px');
-  svg.append('g').attr('transform', `translate(${margin.left},0)`)
-    .call(d3.axisLeft(y).ticks(5)).selectAll('text').attr('fill', '#fff');
-  svg.append('g').attr('transform', `translate(${margin.left},0)`)
-    .call(d3.axisLeft(y).ticks(5).tickSize(-(width - margin.left - margin.right)).tickFormat(''))
-    .selectAll('line').attr('stroke', '#ffffff10');
+  addGradient(svg, 'barGradient', '#8b5cf6');
+  addGradient(svg, 'barGradientHover', '#c4b5fd');
 
-  svg.selectAll('rect').data(data).join('rect')
-    .attr('x', d => x(d.nome)).attr('y', d => y(d.valor))
-    .attr('width', x.bandwidth()).attr('height', d => height - margin.bottom - y(d.valor))
-    .attr('rx', 8).attr('fill', '#a855f7');
+  const yAxis = isLog ? d3.axisLeft(y).ticks(5, formatAxis) : d3.axisLeft(y).ticks(5).tickFormat(formatAxis);
+  styleAxis(svg.append('g').attr('transform', `translate(${margin.left},0)`)
+    .call(yAxis.tickSize(-(width - margin.left - margin.right)).tickPadding(10)));
+  svg.selectAll('.tick line').attr('stroke-dasharray', '3 4');
 
-  svg.selectAll('.bar-value').data(data).join('text')
-    .attr('class', 'bar-value').attr('x', d => x(d.nome) + x.bandwidth() / 2)
-    .attr('y', d => y(d.valor) - 8).attr('text-anchor', 'middle')
-    .attr('fill', '#ddd6fe').style('font-size', '10px')
-    .text(d => formatCurrency(d.valor));
+  styleAxis(svg.append('g').attr('transform', `translate(0,${baseline})`)
+    .call(d3.axisBottom(x).tickSize(0).tickPadding(14)), { fontSize: 13 })
+    .selectAll('text').attr('fill', CHART.label).style('font-weight', 600);
+
+  const barWidth = Math.min(x.bandwidth(), 64);
+  const offset = (x.bandwidth() - barWidth) / 2;
+
+  svg.selectAll('rect.bar').data(data).join('rect')
+    .attr('class', 'bar')
+    .attr('x', d => x(d.nome) + offset).attr('width', barWidth)
+    .attr('y', d => y(d.valor)).attr('height', d => Math.max(2, baseline - y(d.valor)))
+    .attr('rx', 6).attr('fill', 'url(#barGradient)').style('cursor', 'pointer')
+    .on('mousemove', (event, d) => {
+      d3.select(event.currentTarget).attr('fill', 'url(#barGradientHover)');
+      showTooltip(event, `${flagFor(d.nome)} ${d.nome}`, formatCurrency(d.valor));
+    })
+    .on('mouseleave', event => {
+      d3.select(event.currentTarget).attr('fill', 'url(#barGradient)');
+      hideTooltip();
+    });
+
+  if (data.length <= 10 && x.step() >= 62) {
+    svg.selectAll('.bar-value').data(data).join('text')
+      .attr('class', 'bar-value').attr('x', d => x(d.nome) + x.bandwidth() / 2)
+      .attr('y', d => y(d.valor) - 9).attr('text-anchor', 'middle')
+      .attr('fill', CHART.label).style('font-size', '12px').style('font-weight', 600)
+      .style('font-family', CHART.font).style('pointer-events', 'none')
+      .text(d => d.valor >= 10000 ? `R$ ${compactFormatter.format(d.valor)}` : formatCurrency(d.valor));
+  }
+
+  const notes = [];
+  if (totalBars > data.length) notes.push(`${data.length} maiores de ${totalBars}`);
+  if (isLog) notes.push('escala logarítmica');
+  if (notes.length) {
+    svg.append('text').attr('x', width - margin.right).attr('y', 14).attr('text-anchor', 'end')
+      .attr('fill', CHART.axis).style('font-size', '11px').style('font-family', CHART.font)
+      .text(notes.join(' · ').replace(/^./, c => c.toUpperCase()));
+  }
 }
 
 function drawRanking(allRates, selected) {
@@ -383,35 +521,61 @@ function drawRanking(allRates, selected) {
   const selectedSet = selected instanceof Set ? selected : new Set(selected);
   const list = allRates.filter(item => selectedSet.has(item.nome))
     .sort((a, b) => b.valor - a.valor).slice(0, 20);
-  if (!list.length) return;
+  if (!list.length) return emptyChart('#graficoHorizontal');
 
-  const width = 700, height = Math.max(300, list.length * 30);
-  const margin = { top: 20, right: 90, bottom: 20, left: 90 };
-  const maxValue = d3.max(list, d => d.valor) || 1;
-  const x = d3.scaleLinear().domain([0, maxValue]).range([0, width - margin.left - margin.right]);
-  const y = d3.scaleBand().domain(list.map(d => d.nome)).range([margin.top, height - margin.bottom]).padding(.25);
+  const rowHeight = 38;
+  const width = chartWidth('#graficoHorizontal', 700), height = list.length * rowHeight + 20;
+  const margin = { top: 10, right: 110, bottom: 10, left: 78 };
+  const values = list.map(d => d.valor);
+  const isLog = needsLog(values);
+  const x = isLog
+    ? d3.scaleLog().domain([d3.min(values) / 3, d3.max(values)]).range([6, width - margin.left - margin.right]).clamp(true)
+    : d3.scaleLinear().domain([0, d3.max(values) || 1]).range([0, width - margin.left - margin.right]);
+  const y = d3.scaleBand().domain(list.map(d => d.nome)).range([margin.top, height - margin.bottom]).padding(.32);
+  const track = width - margin.left - margin.right;
 
   svg.attr('viewBox', `0 0 ${width} ${height}`);
-  svg.append('g').attr('transform', `translate(${margin.left},0)`).call(d3.axisLeft(y))
-    .selectAll('text').attr('fill', 'white').style('font-size', '11px');
-  svg.selectAll('rect').data(list).join('rect')
+  const grad = svg.append('defs').append('linearGradient').attr('id', 'rankGradient');
+  grad.append('stop').attr('offset', '0%').attr('stop-color', '#6d28d9');
+  grad.append('stop').attr('offset', '100%').attr('stop-color', '#a78bfa');
+
+  svg.selectAll('rect.track').data(list).join('rect').attr('class', 'track')
     .attr('x', margin.left).attr('y', d => y(d.nome)).attr('height', y.bandwidth())
-    .attr('rx', 8).attr('width', d => x(d.valor)).attr('fill', '#8b5cf6');
-  svg.selectAll('.valorRanking').data(list).join('text')
-    .attr('class', 'valorRanking').attr('x', d => margin.left + x(d.valor) + 8)
-    .attr('y', d => y(d.nome) + y.bandwidth() / 2 + 4).attr('fill', 'white')
-    .style('font-size', '10px').text(d => formatCurrency(d.valor));
+    .attr('width', track).attr('rx', y.bandwidth() / 2).attr('fill', 'rgba(255,255,255,.035)');
+
+  svg.selectAll('rect.rank').data(list).join('rect').attr('class', 'rank')
+    .attr('x', margin.left).attr('y', d => y(d.nome)).attr('height', y.bandwidth())
+    .attr('rx', y.bandwidth() / 2).attr('width', d => Math.max(y.bandwidth(), x(d.valor)))
+    .attr('fill', 'url(#rankGradient)').style('cursor', 'pointer')
+    .on('mousemove', (event, d) => showTooltip(event, `${flagFor(d.nome)} ${d.nome}`, formatCurrency(d.valor)))
+    .on('mouseleave', hideTooltip);
+
+  svg.selectAll('.rank-pos').data(list).join('text').attr('class', 'rank-pos')
+    .attr('x', 6).attr('y', d => y(d.nome) + y.bandwidth() / 2 + 4)
+    .attr('fill', CHART.axis).style('font-size', '12px').style('font-family', CHART.font)
+    .text((d, i) => `${i + 1}.`);
+
+  svg.selectAll('.rank-name').data(list).join('text').attr('class', 'rank-name')
+    .attr('x', 30).attr('y', d => y(d.nome) + y.bandwidth() / 2 + 5)
+    .attr('fill', CHART.label).style('font-size', '13px').style('font-weight', 600).style('font-family', CHART.font)
+    .text(d => d.nome);
+
+  svg.selectAll('.valorRanking').data(list).join('text').attr('class', 'valorRanking')
+    .attr('x', width - 4).attr('y', d => y(d.nome) + y.bandwidth() / 2 + 5).attr('text-anchor', 'end')
+    .attr('fill', '#f5f3fa').style('font-size', '13px').style('font-weight', 600).style('font-family', CHART.font)
+    .text(d => formatCurrency(d.valor));
 }
 
 function drawProjection(currencies) {
   const svg = d3.select('#graficoProjecao');
   clearSvg('#graficoProjecao');
-  if (!currencies.length) return;
+  const legend = $('#projectionLegend');
+  if (!currencies.length) { if (legend) legend.innerHTML = ''; return emptyChart('#graficoProjecao'); }
 
   const months = Number($('#projectionMonths').value || 6);
   const growth = Number($('#projectionRate').value || 5) / 100;
-  const width = 900, height = 360;
-  const margin = { top: 25, right: 25, bottom: 45, left: 70 };
+  const width = chartWidth('#graficoProjecao', 960), height = 340;
+  const margin = { top: 20, right: 64, bottom: 36, left: 56 };
   const base = currencies.slice(0, 6);
   const points = base.flatMap(currency => Array.from({ length: months + 1 }, (_, month) => ({
     code: currency.nome,
@@ -419,27 +583,80 @@ function drawProjection(currencies) {
     value: currency.valor * Math.pow(1 + growth, month / 12)
   })));
 
-  const maxValue = d3.max(points, point => point.value) || 1;
+  const values = points.map(p => p.value);
+  const isLog = needsLog(values);
   const x = d3.scaleLinear().domain([0, months]).range([margin.left, width - margin.right]);
-  const y = d3.scaleLinear().domain([0, maxValue]).nice().range([height - margin.bottom, margin.top]);
+  const y = isLog
+    ? d3.scaleLog().domain([d3.min(values) / 1.6, d3.max(values) * 1.6]).range([height - margin.bottom, margin.top])
+    : d3.scaleLinear().domain([0, d3.max(values) || 1]).nice().range([height - margin.bottom, margin.top]);
   const line = d3.line().x(d => x(d.month)).y(d => y(d.value)).curve(d3.curveMonotoneX);
 
   svg.attr('viewBox', `0 0 ${width} ${height}`);
-  svg.append('g').attr('transform', `translate(0,${height - margin.bottom})`)
-    .call(d3.axisBottom(x).ticks(Math.min(months, 12)).tickFormat(d => `M${d}`))
-    .selectAll('text').attr('fill', '#aaa');
-  svg.append('g').attr('transform', `translate(${margin.left},0)`)
-    .call(d3.axisLeft(y).ticks(5)).selectAll('text').attr('fill', '#aaa');
 
-  const colors = ['#a855f7','#c084fc','#e879f9','#8b5cf6','#f0abfc','#7c3aed'];
+  const yAxis = isLog ? d3.axisLeft(y).ticks(5, formatAxis) : d3.axisLeft(y).ticks(5).tickFormat(formatAxis);
+  styleAxis(svg.append('g').attr('transform', `translate(${margin.left},0)`)
+    .call(yAxis.tickSize(-(width - margin.left - margin.right)).tickPadding(10)));
+  svg.selectAll('.tick line').attr('stroke-dasharray', '3 4');
+  styleAxis(svg.append('g').attr('transform', `translate(0,${height - margin.bottom})`)
+    .call(d3.axisBottom(x).ticks(Math.min(months, 12)).tickFormat(d => `M${d}`).tickSize(0).tickPadding(12)));
+
+  const defs = svg.append('defs');
+  const endLabels = [];
   base.forEach((currency, index) => {
+    const color = CHART.palette[index % CHART.palette.length];
     const series = points.filter(point => point.code === currency.nome);
+    const gid = `projArea${index}`;
+    const g = defs.append('linearGradient').attr('id', gid).attr('x1', 0).attr('x2', 0).attr('y1', 0).attr('y2', 1);
+    g.append('stop').attr('offset', '0%').attr('stop-color', color).attr('stop-opacity', base.length === 1 ? .3 : .12);
+    g.append('stop').attr('offset', '100%').attr('stop-color', color).attr('stop-opacity', 0);
+
+    if (base.length <= 3) {
+      const area = d3.area().x(d => x(d.month)).y0(height - margin.bottom).y1(d => y(d.value)).curve(d3.curveMonotoneX);
+      svg.append('path').datum(series).attr('fill', `url(#${gid})`).attr('d', area);
+    }
     svg.append('path').datum(series).attr('fill', 'none')
-      .attr('stroke', colors[index % colors.length]).attr('stroke-width', 3).attr('d', line);
-    svg.append('text').attr('x', width - margin.right - 2)
-      .attr('y', y(series.at(-1).value)).attr('fill', '#ddd6fe')
-      .style('font-size', '10px').attr('text-anchor', 'end').text(currency.nome);
+      .attr('stroke', color).attr('stroke-width', 2.5).attr('stroke-linecap', 'round').attr('d', line);
+
+    const last = series.at(-1);
+    svg.append('circle').attr('cx', x(last.month)).attr('cy', y(last.value)).attr('r', 4.5)
+      .attr('fill', '#100c18').attr('stroke', color).attr('stroke-width', 2.5);
+    endLabels.push({ name: currency.nome, color, y: y(last.value) });
   });
+
+  dodgeLabels(endLabels, 16, margin.top, height - margin.bottom).forEach(label => {
+    svg.append('text').attr('x', x(months) + 10).attr('y', label.y + 4)
+      .attr('fill', label.color).style('font-size', '12px').style('font-weight', 700).style('font-family', CHART.font)
+      .text(label.name);
+  });
+
+  // camada invisível para tooltip por mês
+  const focus = svg.append('line').attr('y1', margin.top).attr('y2', height - margin.bottom)
+    .attr('stroke', 'rgba(255,255,255,.18)').attr('stroke-dasharray', '3 3').style('opacity', 0);
+  svg.append('rect').attr('x', margin.left).attr('y', margin.top)
+    .attr('width', width - margin.left - margin.right).attr('height', height - margin.top - margin.bottom)
+    .attr('fill', 'transparent')
+    .on('mousemove', event => {
+      const [mx] = d3.pointer(event);
+      const month = Math.max(0, Math.min(months, Math.round(x.invert(mx))));
+      focus.attr('x1', x(month)).attr('x2', x(month)).style('opacity', 1);
+      const rows = base.map(c => {
+        const p = points.find(pt => pt.code === c.nome && pt.month === month);
+        return `${c.nome}: ${formatCurrency(p.value)}`;
+      });
+      const el = tooltip();
+      el.innerHTML = `<b>Mês ${month}</b>` + rows.map(r => `<span style="display:block">${escapeHtml(r)}</span>`).join('');
+      const left = Math.min(event.clientX + 14, window.innerWidth - el.offsetWidth - 10);
+      el.style.left = `${left}px`;
+      el.style.top = `${event.clientY - el.offsetHeight - 12}px`;
+      el.classList.add('show');
+    })
+    .on('mouseleave', () => { focus.style('opacity', 0); hideTooltip(); });
+
+  if (legend) {
+    legend.innerHTML = base.map((c, i) =>
+      `<span><i style="background:${CHART.palette[i % CHART.palette.length]}"></i>${flagFor(c.nome)} ${escapeHtml(c.nome)}</span>`
+    ).join('') + (isLog ? '<span style="color:var(--text-3)">· escala logarítmica</span>' : '');
+  }
 }
 
 function scheduleProjection() {
