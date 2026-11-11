@@ -15,7 +15,8 @@ $iniciais = strtoupper(substr($nome, 0, 1));
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <script src="https://d3js.org/d3.v7.min.js"></script>
-<link rel="stylesheet" href="assets/dashboard.css">
+<link rel="stylesheet" href="assets/dashboard.css?v=3">
+<meta name="theme-color" content="#07050c">
 </head>
 <body>
 <div class="app">
@@ -23,17 +24,17 @@ $iniciais = strtoupper(substr($nome, 0, 1));
         <a class="brand" href="dashboard.php"><span class="brand-mark">P</span><div><b>Purple</b><small>Finance</small></div></a>
         <nav>
             <span class="nav-label">VISÃO GERAL</span>
-            <a class="nav-link active" href="dashboard.php"><span>⌂</span> Dashboard</a>
+            <a class="nav-link active" href="dashboard.php"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="3.5" width="7" height="8" rx="1.5"/><rect x="13.5" y="3.5" width="7" height="5" rx="1.5"/><rect x="13.5" y="11.5" width="7" height="9" rx="1.5"/><rect x="3.5" y="14.5" width="7" height="6" rx="1.5"/></svg> Dashboard</a>
         </nav>
         <div class="sidebar-bottom">
             <div class="mini-user"><div class="avatar"><?= e($iniciais) ?></div><div><strong><?= e($nome) ?></strong><small>Conta ativa</small></div></div>
-            <a class="logout" href="logout.php">↪ Sair da conta</a>
+            <a class="logout" href="logout.php"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 4.5h2.5a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H15M10 16.5 5.5 12 10 7.5M5.5 12H15"/></svg> Sair da conta</a>
         </div>
     </aside>
 
     <main class="content">
         <header class="topbar">
-            <div><span class="eyebrow">DASHBOARD</span><h1>Olá, <?= e(explode(' ', $nome)[0]) ?> 👋</h1><p>Acompanhe suas cotações de forma simples.</p></div>
+            <div><span class="eyebrow">DASHBOARD</span><h1>Olá, <?= e(explode(' ', $nome)[0]) ?></h1><p>Acompanhe suas cotações de forma simples.</p></div>
             <div class="top-user"><div class="avatar"><?= e($iniciais) ?></div><div><strong><?= e($nome) ?></strong><small>Usuário</small></div></div>
         </header>
 
@@ -44,34 +45,34 @@ $iniciais = strtoupper(substr($nome, 0, 1));
             </div>
             <div class="currency-picker-wrap">
                 <button type="button" class="currency-picker" id="currencyPicker" aria-expanded="false">
-                    <span class="picker-icon">◎</span>
+                    <span class="picker-icon"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="9" r="5.5"/><path d="M14.5 9.6a5.5 5.5 0 1 1-4.9 4.9"/></svg></span>
                     <span class="picker-text"><b id="pickerTitle">Selecionar moedas</b><small id="pickerSubtitle">Carregando moedas...</small></span>
-                    <span class="picker-chevron">⌄</span>
+                    <span class="picker-chevron"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></span>
                 </button>
                 <div class="currency-menu" id="currencyMenu" hidden>
                     <div class="currency-menu-head">
                         <div><strong>Escolha suas moedas</strong><small>Selecione uma ou várias</small></div>
                         <button type="button" id="selectAllCurrencies" class="text-btn">Selecionar todas</button>
                     </div>
-                    <div class="currency-search"><span>⌕</span><input id="currencySearch" type="search" placeholder="Buscar por nome ou código..." autocomplete="off"></div>
+                    <div class="currency-search"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.3-4.3"/></svg><input id="currencySearch" type="search" placeholder="Buscar por nome ou código..." autocomplete="off"></div>
                     <div class="selected-chips" id="selectedChips"></div>
                     <div class="currency-options" id="currencyOptions"><div class="loading-currencies">Carregando moedas...</div></div>
                     <div class="currency-menu-foot"><span id="currencyCount">0 selecionadas</span><button type="button" id="applyCurrencies" class="apply-btn">Aplicar seleção</button></div>
                 </div>
-                <button type="button" class="refresh">↻ Atualizar</button>
+                <button type="button" class="refresh"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11.5A8 8 0 1 0 17.7 17M20 5v6.5h-6.5"/></svg><span>Atualizar</span></button>
             </div>
         </section>
 
         <section class="cards">
-            <div class="metric"><div class="metric-icon purple">◎</div><div><small>Moedas selecionadas</small><strong id="totalMoedas">0</strong></div></div>
-            <div class="metric"><div class="metric-icon pink">↗</div><div><small>Maior cotação</small><strong id="maiorMoeda">-</strong></div></div>
+            <div class="metric"><div class="metric-icon purple"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="9" r="5.5"/><path d="M14.5 9.6a5.5 5.5 0 1 1-4.9 4.9"/></svg></div><div><small>Moedas selecionadas</small><strong id="totalMoedas">0</strong></div></div>
+            <div class="metric"><div class="metric-icon pink"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 17 9.5 11l4 4 7-7.5M14.5 7.5h6v6"/></svg></div><div><small>Maior cotação</small><strong id="maiorMoeda">-</strong></div></div>
             <div class="metric"><div class="metric-icon blue">R$</div><div><small>Valor máximo</small><strong id="maiorValor">R$ 0,00</strong></div></div>
-            <div class="metric"><div class="metric-icon green">✓</div><div><small>Atualizado às</small><strong id="horaAtual">--:--</strong></div></div>
+            <div class="metric"><div class="metric-icon green"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg></div><div><small>Atualizado às</small><strong id="horaAtual">--:--</strong></div></div>
         </section>
 
         <section class="grid">
             <div class="panel chart-panel">
-                <div class="panel-title"><div><h2>Cotação atual</h2><p>Comparativo das moedas selecionadas</p></div><span class="live"><i></i> Ao vivo</span></div>
+                <div class="panel-title"><div><h2>Cotação atual</h2><p>Comparativo das moedas selecionadas</p></div><span class="live"><i></i>Ao vivo</span></div>
                 <svg id="graficoBarras"></svg>
             </div>
             <div class="panel">
@@ -86,6 +87,7 @@ $iniciais = strtoupper(substr($nome, 0, 1));
                 <label>Período <strong><span id="monthsValue">6</span> meses</strong><input id="projectionMonths" type="range" min="1" max="24" value="6"></label>
                 <label>Taxa estimada <strong id="rateValue">5% a.a.</strong><input id="projectionRate" type="range" min="-20" max="50" step="1" value="5"></label>
             </div>
+            <div id="projectionLegend" class="legend"></div>
             <svg id="graficoProjecao"></svg>
             <p class="projection-note">A projeção é matemática e ilustrativa, baseada no valor atual e na taxa escolhida. Ela não representa recomendação financeira nem garante valorização futura.</p>
         </section>
@@ -102,6 +104,6 @@ $iniciais = strtoupper(substr($nome, 0, 1));
         </section>
     </main>
 </div>
-<script src="assets/dashboard.js"></script>
+<script src="assets/dashboard.js?v=3"></script>
 </body>
 </html>

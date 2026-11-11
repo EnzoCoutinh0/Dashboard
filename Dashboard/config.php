@@ -3,10 +3,12 @@ declare(strict_types=1);
 
 session_start();
 
-$host = 'localhost';
-$db   = 'sistema_login';
-$user = 'root';
-$pass = '';
+// Valores padrão do XAMPP local. Em produção, defina as variáveis de ambiente
+// DB_HOST, DB_NAME, DB_USER e DB_PASS em vez de colocar senhas neste arquivo.
+$host = getenv('DB_HOST') ?: 'localhost';
+$db   = getenv('DB_NAME') ?: 'sistema_login';
+$user = getenv('DB_USER') ?: 'root';
+$pass = getenv('DB_PASS') !== false ? getenv('DB_PASS') : '';
 $charset = 'utf8mb4';
 
 $dsn = "mysql:host=$host;dbname=$db;charset=$charset";

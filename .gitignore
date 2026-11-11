@@ -1,0 +1,27 @@
+# Configurações locais e segredos
+.env
+.env.*
+config.local.php
+*.key
+*.pem
+
+# Dumps e backups de banco (database.sql é só a estrutura e é versionado)
+*.dump
+*.bak
+backup*.sql
+dump*.sql
+
+# Arquivos compactados e de sistema
+*.zip
+*.rar
+*.7z
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Logs, dependências e editores
+*.log
+node_modules/
+vendor/
+.vscode/
+.idea/
